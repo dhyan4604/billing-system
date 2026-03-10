@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shiv Electricals - Bill Generator</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=3">
+</head>
+<body>
+    <div class="wrap">
+        <div class="topbar">
+            <div class="brand">
+                <div class="mark">
+                    <img src="assets/mark.svg?v=3" alt="Shiv Electricals logo">
+                </div>
+                <div class="title">
+                    <img class="wordmark" src="assets/logo.svg?v=3" alt="Shiv Electricals">
+                    <span>Bill / Invoice Generator</span>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn" type="button" id="addItem">Add Item</button>
+                <button class="btn" type="button" id="saveBill">Save Bill</button>
+                <button class="btn primary" type="button" id="generatePdf">Generate Bill (PDF)</button>
+                <button class="btn" type="button" id="reset">Reset</button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <div class="hd">
+                    <h2>Bill Details</h2>
+                    <span class="chip"><span>Subtotal</span> <b data-out="subtotal">0.00</b></span>
+                </div>
+                <div class="bd">
+                    <p class="help">Your business details stay fixed. Fill customer + work items and totals auto-calculate.</p>
+                    <div class="rule" style="opacity:.35"></div>
+
+                    <div class="split">
+                        <div class="chip"><span id="bizName"></span></div>
+                        <div class="chip"><span>Phone</span> <b id="bizPhone"></b></div>
+                    </div>
+                    <div class="hint" id="bizPerson"></div>
+                    <div class="hint" id="bizLocation"></div>
+                    <div class="hint" id="bizTag"></div>
+
+                    <div class="rule" style="opacity:.35"></div>
+
+                    <div class="form" autocomplete="off">
+                        <div>
+                            <label for="invoiceNo">Invoice No</label>
+                            <input id="invoiceNo" type="text" placeholder="SE-00001">
+                        </div>
+                        <div>
+                            <label for="billDate">Date</label>
+                            <input id="billDate" type="date">
+                        </div>
+                        <div class="full">
+                            <label for="workType">Work Type</label>
+                            <select id="workType">
+                                <option>Electrical</option>
+                                <option>Camera</option>
+                                <option>Electrical + Camera</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="custName">Customer Name</label>
+                            <input id="custName" type="text" placeholder="Customer full name">
+                        </div>
+                        <div>
+                            <label for="custPhone">Customer Phone</label>
+                            <input id="custPhone" type="tel" placeholder="10-digit mobile">
+                        </div>
+                        <div class="full">
+                            <label for="custAddress">Customer Address</label>
+                            <textarea id="custAddress" placeholder="House/Shop, street, city"></textarea>
+                        </div>
+
+                        <div>
+                            <label for="discount">Discount (Rs.)</label>
+                            <input id="discount" type="number" min="0" step="0.01" value="0">
+                        </div>
+                        <div>
+                            <label for="taxPct">Tax / GST (%)</label>
+                            <input id="taxPct" type="number" min="0" step="0.01" value="0">
+                        </div>
+                        <div class="full">
+                            <label for="notes">Notes</label>
+                            <textarea id="notes" placeholder="Warranty, payment terms, UPI, etc."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="rule" style="opacity:.35"></div>
+
+                    <div class="card" style="background: rgba(255,255,255,.04); box-shadow:none">
+                        <div class="hd">
+                            <h2>Work Items</h2>
+                            <div class="actions">
+                                <button class="btn" type="button" id="addItemInline">Add Item</button>
+                                <span class="help">Qty x Rate = Amount</span>
+                            </div>
+                        </div>
+                        <div class="bd" style="padding-top:10px">
+                            <div class="table-scroll">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Description</th>
+                                            <th class="center" style="width:90px">Qty</th>
+                                            <th class="num" style="width:120px">Rate (Rs.)</th>
+                                            <th class="num" style="width:130px">Amount (Rs.)</th>
+                                            <th class="center" style="width:120px">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="itemsBody"></tbody>
+                                </table>
+                            </div>
+                            <div class="hint">Tip: For the PDF, make sure Chrome print settings enable “Background graphics” if you want the watermark.</div>
+                        </div>
+                    </div>
+
+                    <div class="rule" style="opacity:.35"></div>
+
+                    <div class="split">
+                        <span class="chip">Subtotal Rs. <b data-out="subtotal">0.00</b></span>
+                        <span class="chip">Discount Rs. <b data-out="discount">0.00</b></span>
+                        <span class="chip">Tax Rs. <b data-out="tax">0.00</b></span>
+                        <span class="chip">Grand Rs. <b data-out="grand">0.00</b></span>
+                    </div>
+
+                    <div class="rule" style="opacity:.35"></div>
+
+                    <div class="card" style="background: rgba(255,255,255,.04); box-shadow:none">
+                        <div class="hd">
+                            <h2>Saved Bills</h2>
+                            <span class="help">Stored in this browser</span>
+                        </div>
+                        <div class="bd" style="padding-top:10px">
+                            <div class="form" style="grid-template-columns: 1fr; gap:10px">
+                                <div>
+                                    <label for="savedBills">Select Saved Bill</label>
+                                    <select id="savedBills"></select>
+                                </div>
+                                <div class="split">
+                                    <button class="btn" type="button" id="loadBill">Load</button>
+                                    <button class="btn primary" type="button" id="downloadSavedPdf">Download PDF</button>
+                                    <button class="btn danger" type="button" id="deleteBill">Delete</button>
+                                </div>
+                            </div>
+                            <div class="hint" id="savedHint">No saved bills yet.</div>
+                            <div class="hint" id="autosaveHint">Autosave: on</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="paper">
+                <div class="pad">
+                    <div class="invoice" id="invoice">
+                        <img class="wm" src="assets/mark.svg?v=3" alt="" aria-hidden="true">
+                        <div class="inv-top">
+                            <div class="inv-left">
+                                <div class="logo">
+                                    <img src="assets/mark.svg?v=3" alt="">
+                                </div>
+                                <div class="who">
+                                    <h1 data-out="bizName">Shiv Electricals</h1>
+                                    <div class="sub">
+                                        <div><b data-out="bizPerson">Parth Bhatt</b></div>
+                                        <div><span data-out="bizPhone">6901716885</span> - <span data-out="bizLocation">Nadiad, Gujarat</span></div>
+                                        <div data-out="bizTag">Camera And Electrical Service</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="inv-right">
+                                <div class="label">Invoice</div>
+                                <div class="num" data-out="invoiceNo">SE-00001</div>
+                                <div class="meta">
+                                    <div>Date: <b data-out="date">-</b></div>
+                                    <div>Work Type: <b data-out="workType">Electrical</b></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rule"></div>
+
+                        <div class="two">
+                            <div class="box">
+                                <h3>Bill To</h3>
+                                <div class="kv">
+                                    <div><b data-out="custName">-</b></div>
+                                    <div class="muted" data-out="custPhone">-</div>
+                                    <div class="muted" data-out="custAddress">-</div>
+                                </div>
+                            </div>
+                            <div class="box">
+                                <h3>Summary</h3>
+                                <div class="kv">
+                                    <div>Subtotal: <b>Rs. <span data-out="subtotal">0.00</span></b></div>
+                                    <div>Discount: <b>Rs. <span data-out="discount">0.00</span></b></div>
+                                    <div>Tax (<span data-out="taxLabel">0.00%</span>): <b>Rs. <span data-out="tax">0.00</span></b></div>
+                                    <div>Grand Total: <b>Rs. <span data-out="grand">0.00</span></b></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="center" style="width:56px">#</th>
+                                    <th>Description</th>
+                                    <th class="center" style="width:70px">Qty</th>
+                                    <th class="num" style="width:120px">Rate (Rs.)</th>
+                                    <th class="num" style="width:130px">Amount (Rs.)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="p_itemsBody"></tbody>
+                        </table>
+
+                        <div class="totals">
+                            <div class="notes">
+                                <h3>Notes</h3>
+                                <p data-out="notes">Thank you for your business.</p>
+                            </div>
+                            <div class="sum">
+                                <div class="row"><span>Subtotal</span><b>Rs. <span data-out="subtotal">0.00</span></b></div>
+                                <div class="row"><span>Discount</span><b>Rs. <span data-out="discount">0.00</span></b></div>
+                                <div class="row"><span>Tax</span><b>Rs. <span data-out="tax">0.00</span></b></div>
+                                <div class="row grand"><span>Grand Total</span><b>Rs. <span data-out="grand">0.00</span></b></div>
+                            </div>
+                        </div>
+
+                        <div class="footer">
+                            <div class="smallprint">
+                                <div><b>Shiv Electricals</b></div>
+                                <div>Phone: <span data-out="bizPhone">9601716885</span></div>
+                                <div>Location: <span data-out="bizLocation">Nadiad, Gujarat</span></div>
+                            </div>
+                            <div class="sign">
+                                <div class="line"></div>
+                                <div class="cap">Authorized Signature</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js" defer></script>
+</body>
+</html>
