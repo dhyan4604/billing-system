@@ -22,6 +22,7 @@ const clampNumber = (value, fallback = 0) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
+let pendingPrint = false;
 let resetAfterPrint = false;
 
 function el(id) {
@@ -179,9 +180,47 @@ function setBusinessDetails() {
 }
 
 function printInvoice() {
-  // Print the current page. Print CSS hides the editor UI and prints only the invoice.
-  // This avoids popup blockers that can break window.open based printing.
-  window.print();
+  // Mobile-friendly: try opening a new tab with invoice-only content (works better on iOS/Android).
+  // Fallback to printing the current page (print CSS prints only the invoice).
+  const invoiceHtml = el("invoice").outerHTML;
+
+  const w = window.open("", "_blank", "noopener,noreferrer");
+  if (!w) {
+    window.print();
+    return { mode: "same" };
+  }
+
+  w.document.open();
+  w.document.write(`<!doctype html>
+  <html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Invoice ${escapeHtml(el("invoiceNo").value || "")}</title>
+    <base href="${escapeHtml(window.location.href)}">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+      body{background:#fff !important}
+      .wrap{max-width:none;margin:0;padding:0}
+      .paper{box-shadow:none;border:none;border-radius:0}
+      .paper .pad{padding:0}
+      .invoice .wm{display:block}
+      @page{size: A4; margin: 12mm}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="paper"><div class="pad">${invoiceHtml}</div></div>
+    </div>
+    <script>
+      window.addEventListener('load', () => {
+        setTimeout(() => window.print(), 250);
+      });
+    </script>
+  </body>
+  </html>`);
+  w.document.close();
+  return { mode: "popup" };
 }
 
 function getItemsFromUI() {
@@ -414,8 +453,10 @@ function init() {
     upsertSavedBill(snapshotBill());
     refreshSavedBillsUI();
     saveDraftNow();
-    resetAfterPrint = true;
-    printInvoice();
+    pendingPrint = true;
+    const res = printInvoice();
+    // If printing happens in a new tab, "afterprint" won't fire here. Clear immediately (bill is saved).
+    if (res && res.mode === "popup") setTimeout(() => resetAll(), 300);
   });
 
   el("saveBill").addEventListener("click", () => {
@@ -446,8 +487,9 @@ function init() {
     applyBillToUI(bill);
     reflow();
     saveDraftNow();
-    resetAfterPrint = true;
-    printInvoice();
+    pendingPrint = true;
+    const res = printInvoice();
+    if (res && res.mode === "popup") setTimeout(() => resetAll(), 300);
   });
 
   const draft = loadDraft();
@@ -457,9 +499,14 @@ function init() {
   refreshSavedBillsUI();
 
   window.addEventListener("beforeunload", () => saveDraftNow());
+  window.addEventListener("beforeprint", () => {
+    // Some mobile browsers don't really print; only clear if the print lifecycle actually starts.
+    if (pendingPrint) resetAfterPrint = true;
+  });
   window.addEventListener("afterprint", () => {
     if (!resetAfterPrint) return;
     resetAfterPrint = false;
+    pendingPrint = false;
     resetAll();
   });
 }

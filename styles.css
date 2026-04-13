@@ -217,6 +217,7 @@ input:focus, select:focus, textarea:focus{
   opacity: .06;
   pointer-events:none;
   user-select:none;
+  display:none;
 }
 
 .inv-top{
@@ -433,6 +434,7 @@ td.center, th.center{text-align:center}
   .paper{box-shadow:none; border:none; border-radius:0}
   .paper .pad{padding:0}
   .invoice{min-height:auto}
+  .invoice .wm{display:block}
   *{-webkit-print-color-adjust: exact; print-color-adjust: exact}
   @page{size: A4; margin: 12mm}
 }
